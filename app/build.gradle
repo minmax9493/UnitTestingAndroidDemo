@@ -104,5 +104,11 @@ dependencies {
 
     androidTestImplementation "androidx.test.espresso:espresso-contrib:$espressoVersion"
 
+    /**
+     * Architecture components core testing library, it contains InstantTaskExecutorRule
+     */
+    androidTestImplementation "androidx.arch.core:core-testing:$archTestingVersion"
 
+    // It provides assertion matcher functions, which are much more like a human sentence
+//    androidTestImplementation "org.hamcrest:hamcrest-all:$hamcrestVersion"
 }

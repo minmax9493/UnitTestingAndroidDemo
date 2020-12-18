@@ -3,11 +3,20 @@ package com.example.android.architecture.blueprints.todoapp.tasks
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.android.architecture.blueprints.todoapp.Event
+import com.example.android.architecture.blueprints.todoapp.MainCoroutineRule
+import com.example.android.architecture.blueprints.todoapp.R
 import com.example.android.architecture.blueprints.todoapp.data.Task
 import com.example.android.architecture.blueprints.todoapp.data.source.FakeTestRepository
 import com.example.android.architecture.blueprints.todoapp.getOrAwaitValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -16,11 +25,17 @@ import org.junit.runner.RunWith
 /**
  * Created by murodjon on 2020/12/14
  */
+@ExperimentalCoroutinesApi
 class TasksViewModelTest{
 
     // Executes each task synchronously using Architecture components
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
+
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
+
+    //val testDispatcher:TestCoroutineDispatcher = TestCoroutineDispatcher()
 
     // Subject under test
     private lateinit var tasksViewModel: TasksViewModel
@@ -29,6 +44,7 @@ class TasksViewModelTest{
 
     @Before
     fun setUp(){
+//        Dispatchers.setMain(testDispatcher)
         tasksRepository = FakeTestRepository()
         val task1 = Task("Title1", "Description1")
         val task2 = Task("Title2", "Description2", true)
@@ -62,7 +78,28 @@ class TasksViewModelTest{
 
         // then the "Add task" action is visible
         assertThat(tasksViewModel.tasksAddViewVisible.getOrAwaitValue(), `is`(true))
-
     }
 
+    @Test
+    fun completeTask_dataAndSnackbarUpdated(){
+        // create an active task and add it to the repository
+        val task = Task("Title", "Description")
+        tasksRepository.addTasks(task)
+
+        // mark the task as complete task
+        tasksViewModel.completeTask(task, true)
+
+        //verify the task is completed
+        assertThat(tasksRepository.tasksServiceData[task.id]?.isCompleted, `is`(true))
+
+        // assert that the snackbar has been updated with the correct text
+        val snackbarText:Event<Int> = tasksViewModel.snackbarText.getOrAwaitValue()
+        assertThat(snackbarText.getContentIfNotHandled(), `is`(R.string.task_marked_complete))
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+//        testDispatcher.cleanupTestCoroutines()
+    }
 }
